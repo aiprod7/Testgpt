@@ -1,5 +1,5 @@
 """
-Мини-игра «Тетрис» на Python.
+Mini Tetris на Python.
 
 Запуск:
     python tetris.py
@@ -27,19 +27,25 @@ SIDE_PANEL = 190
 WIDTH = COLUMNS * CELL_SIZE + SIDE_PANEL
 HEIGHT = ROWS * CELL_SIZE
 
-BOARD_COLOR = "#111827"
-GRID_COLOR = "#243244"
-TEXT_COLOR = "#e5e7eb"
-GHOST_COLOR = "#374151"
+# Новая палитра: neon sunset — темный фон, яркие фигуры и мягкая тень.
+BOARD_COLOR = "#160f29"
+PANEL_COLOR = "#0f172a"
+GRID_COLOR = "#35284f"
+TEXT_COLOR = "#fff7ed"
+MUTED_TEXT_COLOR = "#c4b5fd"
+GHOST_COLOR = "#5b4b8a"
+EMPTY_CELL_COLOR = "#1f1638"
+PAUSE_COLOR = "#fbbf24"
+GAME_OVER_COLOR = "#fb7185"
 
 COLORS = {
-    "I": "#22d3ee",
-    "J": "#60a5fa",
-    "L": "#fb923c",
-    "O": "#facc15",
-    "S": "#4ade80",
-    "T": "#c084fc",
-    "Z": "#f87171",
+    "I": "#00f5d4",
+    "J": "#4cc9f0",
+    "L": "#ff8fab",
+    "O": "#fee440",
+    "S": "#80ed99",
+    "T": "#c77dff",
+    "Z": "#ff4d6d",
 }
 
 SHAPES = {
@@ -282,20 +288,22 @@ class Tetris:
             fill=color,
             outline=outline,
         )
+        self.canvas.create_line(px + 3, py + 3, px + CELL_SIZE - 5, py + 3, fill="#ffffff")
+        self.canvas.create_line(px + 3, py + 3, px + 3, py + CELL_SIZE - 5, fill="#ffffff")
 
     def draw_board(self) -> None:
         for row in range(ROWS):
             for col in range(COLUMNS):
-                color = COLORS.get(self.board[row][col], "#0f172a")
+                color = COLORS.get(self.board[row][col], EMPTY_CELL_COLOR)
                 self.draw_cell(col, row, color)
 
         for col in range(COLUMNS + 1):
             x = col * CELL_SIZE
-            self.canvas.create_line(x, 0, x, HEIGHT, fill="#1f2937")
+            self.canvas.create_line(x, 0, x, HEIGHT, fill=GRID_COLOR)
 
         for row in range(ROWS + 1):
             y = row * CELL_SIZE
-            self.canvas.create_line(0, y, COLUMNS * CELL_SIZE, y, fill="#1f2937")
+            self.canvas.create_line(0, y, COLUMNS * CELL_SIZE, y, fill=GRID_COLOR)
 
     def draw_piece(self, piece: dict[str, object], ghost: bool = False) -> None:
         matrix = piece["matrix"]  # type: ignore[assignment]
@@ -317,15 +325,16 @@ class Tetris:
 
     def draw_sidebar(self) -> None:
         x = COLUMNS * CELL_SIZE + 22
-        self.canvas.create_text(x, 35, anchor="w", fill=TEXT_COLOR, font=("Arial", 18, "bold"), text="TETRIS")
-        self.canvas.create_text(x, 85, anchor="w", fill=TEXT_COLOR, font=("Arial", 12), text=f"Очки: {self.score}")
-        self.canvas.create_text(x, 115, anchor="w", fill=TEXT_COLOR, font=("Arial", 12), text=f"Линии: {self.lines}")
-        self.canvas.create_text(x, 145, anchor="w", fill=TEXT_COLOR, font=("Arial", 12), text=f"Уровень: {self.level}")
+        self.canvas.create_text(x, 35, anchor="w", fill=TEXT_COLOR, font=("Arial", 18, "bold"), text="MINI TETRIS")
+        self.canvas.create_text(x, 62, anchor="w", fill=MUTED_TEXT_COLOR, font=("Arial", 10), text="neon sunset")
+        self.canvas.create_text(x, 100, anchor="w", fill=TEXT_COLOR, font=("Arial", 12), text=f"Очки: {self.score}")
+        self.canvas.create_text(x, 130, anchor="w", fill=TEXT_COLOR, font=("Arial", 12), text=f"Линии: {self.lines}")
+        self.canvas.create_text(x, 160, anchor="w", fill=TEXT_COLOR, font=("Arial", 12), text=f"Уровень: {self.level}")
 
-        self.canvas.create_text(x, 200, anchor="w", fill=TEXT_COLOR, font=("Arial", 12, "bold"), text="Следующая:")
+        self.canvas.create_text(x, 210, anchor="w", fill=MUTED_TEXT_COLOR, font=("Arial", 12, "bold"), text="Следующая:")
 
         preview_origin_x = x
-        preview_origin_y = 230
+        preview_origin_y = 240
         matrix = self.next_piece["matrix"]  # type: ignore[assignment]
         name = self.next_piece["name"]  # type: ignore[assignment]
 
@@ -352,17 +361,18 @@ class Tetris:
             "P    пауза\n"
             "R    заново"
         )
-        self.canvas.create_text(x, 360, anchor="w", fill=TEXT_COLOR, font=("Arial", 11), text=controls)
+        self.canvas.create_text(x, 365, anchor="w", fill=TEXT_COLOR, font=("Arial", 11), text=controls)
 
         if self.paused:
-            self.canvas.create_text(x, 520, anchor="w", fill="#fde68a", font=("Arial", 14, "bold"), text="ПАУЗА")
+            self.canvas.create_text(x, 520, anchor="w", fill=PAUSE_COLOR, font=("Arial", 14, "bold"), text="ПАУЗА")
 
         if not self.running:
-            self.canvas.create_text(x, 520, anchor="w", fill="#fca5a5", font=("Arial", 14, "bold"), text="ИГРА ОКОНЧЕНА")
+            self.canvas.create_text(x, 520, anchor="w", fill=GAME_OVER_COLOR, font=("Arial", 14, "bold"), text="ИГРА ОКОНЧЕНА")
             self.canvas.create_text(x, 550, anchor="w", fill=TEXT_COLOR, font=("Arial", 11), text="Нажмите R")
 
     def draw(self) -> None:
         self.canvas.delete("all")
+        self.canvas.create_rectangle(0, 0, COLUMNS * CELL_SIZE, HEIGHT, fill=BOARD_COLOR, outline=BOARD_COLOR)
         self.draw_board()
 
         if self.current:
@@ -371,7 +381,7 @@ class Tetris:
             self.draw_piece(ghost_piece, ghost=True)
             self.draw_piece(self.current)
 
-        self.canvas.create_rectangle(COLUMNS * CELL_SIZE, 0, WIDTH, HEIGHT, fill="#020617", outline="#020617")
+        self.canvas.create_rectangle(COLUMNS * CELL_SIZE, 0, WIDTH, HEIGHT, fill=PANEL_COLOR, outline=PANEL_COLOR)
         self.draw_sidebar()
 
     def run(self) -> None:
